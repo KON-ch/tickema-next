@@ -1,0 +1,20 @@
+.close {
+  display: none;
+}
+.menu{
+  position: fixed;
+  background-color: white;
+  color: black;
+  height: 100%;
+  width: 80%;
+  left: 20%;
+  z-index: 999;
+}
+.openButton {
+  height: 48px;
+  width: 48px;
+  font-size: 32px;
+  position: fixed;
+  top: 5%;
+  left: 80%;
+}

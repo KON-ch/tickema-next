@@ -1,0 +1,1 @@
+type AppearanceStage = Prisma.AppearanceStage

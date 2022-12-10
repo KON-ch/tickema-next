@@ -1,0 +1,54 @@
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: dark;
+  }
+}
+
+.modal {
+  z-index: 999;
+  background-color: rgba(0, 0, 0, 0.7);
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  padding: 64px;
+  text-align: center;
+}
+
+.modal-field {
+  background-color: white;
+  color: black;
+  margin-top: 32px;
+  height: 80%;
+  width: 100%;
+  overflow-y: auto;
+  padding: 32px;
+}
+
+.confirm-modal-field {
+  background-color: white;
+  color: black;
+  margin-top: 32px;
+  height: 300px;
+  width: 100%;
+  overflow-y: auto;
+  padding: 32px;
+}
