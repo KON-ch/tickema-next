@@ -5,7 +5,6 @@ import prisma from '../../../lib/prisma';
 import { getSession } from 'next-auth/react';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 
 import StageScheduleLink from '../../components/StageSchedulesLink';
 import StageForm from '../../components/StageForm';
@@ -55,23 +54,6 @@ type StageProps = {
 };
 
 const Page: NextPage<StageProps> = ({ stages, appearanceUserId }) => {
-  const year = new Date().getFullYear()
-
-  const { reset } = useForm({
-    defaultValues: {
-      title: '',
-      performanceSchedules: [
-        { startedAt: `${year}-01-01T12:00` }
-      ],
-      saleTickets: [
-        {
-          type: '一般' ,
-          price: 0,
-        }
-      ]
-    }
-  });
-
   const formSubmit = async (data: CreateStageData) => {
     const endpoint = '/api/stages';
 
@@ -97,7 +79,6 @@ const Page: NextPage<StageProps> = ({ stages, appearanceUserId }) => {
       const result: AppearanceStage = await res.json();
 
       setAppearanceStages([result, ...appearanceStages]);
-      reset();
     } catch(e) {
       console.error(e);
     }
