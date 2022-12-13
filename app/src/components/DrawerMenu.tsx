@@ -1,85 +1,107 @@
+import { Fragment, useState, KeyboardEvent, MouseEvent } from 'react';
+
+import Box from '@mui/material/Box';
+import Drawer from '@mui/material/Drawer';
+import Button from '@mui/material/Button';
+import List from '@mui/material/List';
+import Divider from '@mui/material/Divider';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import SettingsIcon from '@mui/icons-material/Settings';
+import InboxIcon from '@mui/icons-material/MoveToInbox';
+
+import type { AppearanceStage } from '@prisma/client';
+import StageScheduleLink from './StageSchedulesLink';
+
 import Link from "next/link";
-import { useState } from "react";
-import LoginButton from './LoginButton';
-
-import styles from '../styles/DrawerMenu.module.css'
-
-type AppearanceStage = {
-  id: number
-  title: String
-  appearanceUserId: String
-}
 
 type Props = {
-  currentStageId: number
+  currentStageId?: number
 }
 
-export default function DrawerMenu({ currentStageId }: Props) {
-  const [stages, setStages] = useState<AppearanceStage[]>([]);
-  const [openMenu, setOpenMenu] = useState(false);
+const DrawerMenu: React.FC<Props> = ({ currentStageId }) => {
+  const [state, setState] = useState<{
+    open: boolean
+    stages: AppearanceStage[]}
+  >({
+    open: false,
+    stages: []
+  });
 
   const getStages = async () => {
     const res = await fetch('/api/stages', { method: 'GET' });
-    const stages = await res.json();
-    setStages(stages);
+    return res.json();
+  };
+
+  const toggleDrawer = async (open: boolean) => {
+    if (!open) {
+      setState({ ...state, open: open });
+    }
+
+    const stages: AppearanceStage[] = await getStages();
+    setState({ stages: stages, open: open });
   };
 
   const stageLists = (stage: AppearanceStage) => {
     if (stage.id === currentStageId) { return; }
 
     return(
-      <li
-        key={stage.id}
-        onClick={ () => setOpenMenu(false) }
-      >
-        <Link
-          href={`/stages/${encodeURIComponent(stage.id)}/schedules`}
-        >
-          {stage.title}
-        </Link>
-      </li>
+      <StageScheduleLink stage={stage}>
+        <ListItem key={stage.id} disablePadding>
+          <ListItemButton>
+            <ListItemIcon>
+              <InboxIcon />
+            </ListItemIcon>
+            <ListItemText primary={stage.title} />
+          </ListItemButton>
+        </ListItem>
+      </StageScheduleLink>
     );
   };
 
-  const menuStyle = openMenu ? styles.open : styles.close
-  const openerStyle = openMenu ? styles.close : styles.open
+  const list = () => (
+    <Box
+      sx={{ width: 250 }}
+      role="presentation"
+      onClick={() => toggleDrawer(false)}
+    >
+      <List>
+        {state.stages.map(stageLists)}
+      </List>
+      <Divider />
+      <List>
+        <Link href='/stages/'>
+          <ListItem disablePadding>
+            <ListItemButton>
+              <ListItemIcon>
+                <SettingsIcon />
+              </ListItemIcon>
+              <ListItemText primary="公演情報登録" />
+            </ListItemButton>
+          </ListItem>
+        </Link>
+      </List>
+    </Box>
+  );
 
-  return(
-    <>
-      <button
-        className={`${styles.openButton} ${openerStyle}`}
-        onClick={ () => {
-          getStages();
-          setOpenMenu(true);
-        }}
-      >
-        ≡
-      </button>
-      <div className={`${styles.menu} ${menuStyle}`}>
-        <button
-          onClick={ () => {
-            setOpenMenu(false);
-          }}
+  return (
+    <div>
+      <Fragment key={'right'}>
+        <Button onClick={() => toggleDrawer(true)}>
+          ≡
+        </Button>
+        <Drawer
+          anchor={'right'}
+          open={state['open']}
+          onClose={() => toggleDrawer(false)}
         >
-          ✖
-        </button>
-        <div>
-          <h3>予約管理</h3>
-          <ul>
-            {
-              stages.map(stageLists)
-            }
-          </ul>
-        </div>
-        <div>
-          <h3>設定</h3>
-          <Link href='/stages/'>
-            公演情報登録
-          </Link>
-        </div>
-        <LoginButton />
-      </div>
-    </>
-  )
+          {list()}
+        </Drawer>
+      </Fragment>
+    </div>
+  );
 }
 
+export default DrawerMenu
