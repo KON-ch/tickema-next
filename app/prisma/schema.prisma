@@ -46,7 +46,7 @@ model VerificationToken {
 model AppearanceUser {
   id            String               @id @default(cuid())
   name          String?              @db.VarChar(255)
-  email         String?              @unique
+  email         String               @unique
   emailVerified DateTime?
   image         String?
   accounts      Account[]
