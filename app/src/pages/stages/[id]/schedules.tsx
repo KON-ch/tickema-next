@@ -18,13 +18,16 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import MuiSelect, { SelectChangeEvent } from '@mui/material/Select';
 
+import ReceptionDeleteDialog from '../../../components/ReceptionDeleteDialog';
+
 import DrawerMenu from '../../../components/DrawerMenu';
+import { AppearanceStage, CancelReservationTicket, PerformanceSchedule, ReservationReception, ReservationTicket, SaleTicket, Supporter } from '@prisma/client';
 
 interface Params extends ParsedUrlQuery {
   id: string
 }
 
-export const getServerSideProps: GetServerSideProps<ScheduleProps> = async ctx => {
+export const getServerSideProps: GetServerSideProps<PageProps> = async ctx => {
   const { id } = ctx.params as Params;
   const session = await getSession(ctx);
 
@@ -118,46 +121,6 @@ export const getServerSideProps: GetServerSideProps<ScheduleProps> = async ctx =
   return { props: { stage, schedules, supporters, saleTickets, appearanceUserId: appearanceUser.id } };
 };
 
-type PerformanceSchedule = {
-  id: number
-  startedAt: string
-  reservationReceptions: ReservationReception[]
-};
-
-type ReservationReception = {
-  id: number
-  receiveType: number
-  receptionAt: string
-  performanceScheduleId: number
-  supporter: Supporter
-  reservationTickets: ReservationTicket[]
-}
-
-type Supporter = {
-  id: number
-  name: String
-}
-
-type SaleTicket = {
-  id: number
-  type: String
-  price: number
-}
-
-type ReservationTicket = {
-  id?: number
-  saleTicketId: number
-  count: number
-}
-
-type ScheduleProps = {
-  schedules: PerformanceSchedule[]
-};
-
-type AppearanceStage = {
-  id: number
-}
-
 type PageProps = {
   stage: AppearanceStage
   schedules: PerformanceSchedule[]
@@ -180,10 +143,10 @@ const Page: NextPage<PageProps> = ({
   useEffect(() => { setOpenList(-1) }, [schedules])
 
   const [modal, setModal] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState<{
+  const [openDeleteDialog, setOpenDeleteDialog] = useState<{
     open: boolean,
-    reception: null | ReservationReception
-  }>({ open: false, reception: null })
+    reception?: ReservationReception & { supporter: Supporter }
+  }>({ open: false, reception: undefined })
 
   const [submitSupporter, setSubmitSupporter] = useState({ label: '', value: null })
   const [validationSupporter, setValidationSupporter] = useState('');
@@ -233,7 +196,9 @@ const Page: NextPage<PageProps> = ({
       const res = await fetch(endpoint, options);
       const result: ReservationReception = await res.json();
 
-      const addScheduleReceptions = (schedule: PerformanceSchedule) => {
+      const addScheduleReceptions = (
+        schedule: PerformanceSchedule & { reservationReceptions: ReservationReception[] }
+      ) => {
         if (schedule.id == result.performanceScheduleId) {
           return {
             ...schedule,
@@ -263,36 +228,30 @@ const Page: NextPage<PageProps> = ({
     setModal(false);
   };
 
-  const deleteTicket = async (id: number) => {
-    try {
-      const res = await fetch(`/api/reservations/tickets/${id}`, { method: 'DELETE' });
-      const cancelTicket = await res.json();
-
-      const verifiedTickets = (reception: ReservationReception) => {
-        return {
-          ...reception,
-          reservationTickets: reception.reservationTickets.filter(ticket =>
-            ticket.id !== cancelTicket.reservationTicketId
-          )
-        };
+  const deleteTicket = async (cancelTicket: CancelReservationTicket) => {
+    const verifiedTickets = (reception: ReservationReception & { reservationTickets: ReservationTicket[] }) => {
+      return {
+        ...reception,
+        reservationTickets: reception.reservationTickets.filter(ticket =>
+          ticket.id !== cancelTicket.reservationTicketId
+        )
       };
+    };
 
-      const verifiedSchedule = (schedule: PerformanceSchedule) => {
-        return {
-          ...schedule,
-          reservationReceptions: schedule.reservationReceptions.map(verifiedTickets)
-        };
+    const verifiedSchedule = (schedule: PerformanceSchedule & { reservationReceptions: ReservationReception[] }) => {
+      return {
+        ...schedule,
+        reservationReceptions: schedule.reservationReceptions.map(verifiedTickets)
       };
+    };
 
-      setScheduleReceptions(scheduleReceptions.map(verifiedSchedule));
-    } catch(e) {
-      console.error(e);
-    }
-
-    setConfirmDelete({ open: false, reception: null })
+    setScheduleReceptions(scheduleReceptions.map(verifiedSchedule));
+    setOpenDeleteDialog({ open: false, reception: undefined })
   }
 
-  function renderReception(reception: ReservationReception): JSX.Element | undefined {
+  function renderReception(
+    reception: ReservationReception & { reservationTickets: ReservationTicket[], supporter: Supporter }
+  ): JSX.Element | undefined {
     const ticketCounter = (sum: number, ticket: ReservationTicket) => {
       return sum + ticket.count;
     }
@@ -306,7 +265,7 @@ const Page: NextPage<PageProps> = ({
         {reception.supporter.name}
         <span>{totalCount}枚</span>
         <button
-          onClick={() => setConfirmDelete({ open: true, reception: reception })}
+          onClick={() => setOpenDeleteDialog({ open: true, reception: reception})}
         >
           ✖
         </button>
@@ -324,7 +283,7 @@ const Page: NextPage<PageProps> = ({
     return `${month}月${dt}日 ${hour}:${minutes}`;
   }
 
-  function renderSchedule(schedule: PerformanceSchedule): JSX.Element {
+  function renderSchedule(schedule: PerformanceSchedule & { reservationReceptions: ReservationReception[] }): JSX.Element {
     const startedAt = locateSchedule(schedule)
 
     const scheduleId: number = schedule.id
@@ -385,28 +344,14 @@ const Page: NextPage<PageProps> = ({
 
   const receptionAtDefaultValue = `${year}-${month}-${date}`
 
-  const ConfirmDelete = (): JSX.Element | undefined => {
-    if (confirmDelete.open && confirmDelete.reception) {
-      return (
-        <div className={`modal ${styles.open}`}>
-          <div className="confirm-modal-field">
-            <h3>予約キャンセル</h3>
-            <p>
-              {confirmDelete.reception.supporter.name} を <br/>
-              キャンセルするよ?
-            </p>
-            <button onClick={() => setConfirmDelete({ open: false, reception: null })}>NO</button>
-            <button onClick={() => confirmDelete.reception?.id && deleteTicket(confirmDelete.reception.id)}>OK</button>
-          </div>
-        </div>
-      )
-    }
-  };
-
   return (
     <div className={styles.schedules}>
       <DrawerMenu currentStageId={stage.id} />
-      {ConfirmDelete()}
+      <ReceptionDeleteDialog
+        dialog={openDeleteDialog}
+        setDialog={setOpenDeleteDialog}
+        deleteTicket={deleteTicket}
+      />
       <div className={`modal ${modalOpen}`}>
         <div className="modal-field">
           <h2 className={styles.subtitle}>チケットを予約する</h2>
