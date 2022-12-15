@@ -1,5 +1,4 @@
 import type { NextPage, GetServerSideProps } from 'next';
-import Select from 'react-select';
 
 import { ParsedUrlQuery } from 'querystring';
 
@@ -9,18 +8,13 @@ import prisma from '../../../../lib/prisma'
 import { useEffect, useState } from 'react';
 import { getSession } from 'next-auth/react'
 
-import { useForm } from "react-hook-form";
-
 import Fab from '@mui/material/Fab'
 import AddIcon from '@mui/icons-material/Add'
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import MuiSelect, { SelectChangeEvent } from '@mui/material/Select';
 
 import ReceptionDeleteDialog from '../../../components/ReceptionDeleteDialog';
-
+import ReceptionCreateDialog from '../../../components/ReceptionCreateDialog';
 import DrawerMenu from '../../../components/DrawerMenu';
+
 import { AppearanceStage, CancelReservationTicket, PerformanceSchedule, ReservationReception, ReservationTicket, SaleTicket, Supporter } from '@prisma/client';
 
 interface Params extends ParsedUrlQuery {
@@ -142,38 +136,28 @@ const Page: NextPage<PageProps> = ({
   const [openList, setOpenList] = useState(-1);
   useEffect(() => { setOpenList(-1) }, [schedules])
 
-  const [modal, setModal] = useState(false)
-  const [openDeleteDialog, setOpenDeleteDialog] = useState<{
+  const [createDialog, setCreateDialog] = useState(false)
+  const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean,
     reception?: ReservationReception & { supporter: Supporter }
   }>({ open: false, reception: undefined })
 
-  const [submitSupporter, setSubmitSupporter] = useState({ label: '', value: null })
-  const [validationSupporter, setValidationSupporter] = useState('');
-
   type SubmitData = {
     performanceScheduleId: string
+    supporterId?: number
     receiveType: string
     receptionAt: string
     saleTicketId: string
     count: string
   }
 
-  const { register, handleSubmit, reset } = useForm();
-
   const formSubmit = async (data: SubmitData) => {
-    if (!submitSupporter.value) {
+    if (!data.supporterId) {
       setValidationSupporter('誰の予約かな?')
       return;
     }
 
     const endpoint = '/api/reservations';
-
-    const receptionAt = () => {
-      const date = new Date(data.receptionAt);
-      date.setHours(date.getHours() + 9);
-      return date
-    }
 
     const options = {
       method: 'POST',
@@ -181,13 +165,8 @@ const Page: NextPage<PageProps> = ({
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        receiveType: Number(data.receiveType),
-        receptionAt: receptionAt(),
-        supporterId: submitSupporter.value,
-        performanceScheduleId: Number(data.performanceScheduleId),
-        reservationTickets: [
-          { saleTicketId: Number(data.saleTicketId),  count: Number(data.count) }
-        ],
+        ...data,
+        receptionAt: new Date(data.receptionAt),
         appearanceUserId: appearanceUserId
       }),
     };
@@ -217,15 +196,13 @@ const Page: NextPage<PageProps> = ({
       );
 
       setOpenList(result.performanceScheduleId);
-
-      reset();
     } catch(e) {
       console.error(e)
     }
 
     setSubmitSupporter({ label: '', value: null })
     setValidationSupporter('')
-    setModal(false);
+    setCreateDialog(false);
   };
 
   const deleteTicket = async (cancelTicket: CancelReservationTicket) => {
@@ -246,7 +223,7 @@ const Page: NextPage<PageProps> = ({
     };
 
     setScheduleReceptions(scheduleReceptions.map(verifiedSchedule));
-    setOpenDeleteDialog({ open: false, reception: undefined })
+    setDeleteDialog({ open: false, reception: undefined })
   }
 
   function renderReception(
@@ -265,7 +242,7 @@ const Page: NextPage<PageProps> = ({
         {reception.supporter.name}
         <span>{totalCount}枚</span>
         <button
-          onClick={() => setOpenDeleteDialog({ open: true, reception: reception})}
+          onClick={() => setDeleteDialog({ open: true, reception: reception})}
         >
           ✖
         </button>
@@ -309,116 +286,14 @@ const Page: NextPage<PageProps> = ({
     );
   }
 
-  const modalOpen = modal ? styles.open : styles.close
-
-  const scheduleOptionTag = (schedule: PerformanceSchedule) => {
-    return (
-      <option
-        value={schedule.id}
-        key={schedule.id}
-      >
-        {locateSchedule(schedule)}
-      </option>
-    )
-  }
-
-  const ticketOptionTag = (ticket: SaleTicket) => {
-    return (
-      <option
-        value={ticket.id}
-        key={ticket.id}
-      >
-        { ticket.type }
-      </option>
-    )
-  }
-
-  const supporterOption = (supporter: Supporter) => {
-    return { value: supporter.id, label: supporter.name }
-  }
-
-  const current = new Date()
-  const year = current.getFullYear();
-  const month = (current.getMonth() + 1) < 10 ? `0${current.getMonth()}` : current.getMonth() + 1;
-  const date = current.getDate() < 10 ? `0${current.getDate()}` : current.getDate();
-
-  const receptionAtDefaultValue = `${year}-${month}-${date}`
-
   return (
     <div className={styles.schedules}>
       <DrawerMenu currentStageId={stage.id} />
       <ReceptionDeleteDialog
-        dialog={openDeleteDialog}
-        setDialog={setOpenDeleteDialog}
+        dialog={deleteDialog}
+        setDialog={setDeleteDialog}
         deleteTicket={deleteTicket}
       />
-      <div className={`modal ${modalOpen}`}>
-        <div className="modal-field">
-          <h2 className={styles.subtitle}>チケットを予約する</h2>
-          <form onSubmit={handleSubmit(formSubmit)}>
-            <div>{validationSupporter}</div>
-            {/* instanceId 必須 */}
-            <Select
-              instanceId="supporter"
-              defaultValue={submitSupporter}
-              value={submitSupporter}
-              unstyled
-              onChange={setSubmitSupporter}
-              options={supporters.map(supporterOption)}
-            />
-            <div>
-              <label>公演日:</label>
-              <select { ...register('performanceScheduleId') }>
-                { schedules.map(scheduleOptionTag) }
-              </select>
-            </div>
-            <div>
-              <label>発券方法:</label>
-              <select { ...register('receiveType')}>
-                <option value={1}>劇場</option>
-                <option value={2}>郵送</option>
-              </select>
-            </div>
-            <div>
-              <label>予約受付日:
-                <input
-                  type='date'
-                  defaultValue={receptionAtDefaultValue}
-                  required
-                  { ...register('receptionAt')}
-                />
-              </label>
-            </div>
-            <div>
-              <select { ...register('saleTicketId') }>
-                { saleTickets.map(ticketOptionTag) }
-              </select>
-              <FormControl variant="standard" required sx={{ m: 1, minWidth: 120 }}>
-                <InputLabel id="demo-simple-select-label">予約枚数</InputLabel>
-                <MuiSelect
-                  labelId="demo-simple-select-label"
-                  id="demo-simple-select"
-                  label="予約枚数"
-                  {...register('count') }
-                >
-                  <MenuItem value={1}>1</MenuItem>
-                  <MenuItem value={2}>2</MenuItem>
-                  <MenuItem value={3}>3</MenuItem>
-                  <MenuItem value={4}>4</MenuItem>
-                  <MenuItem value={5}>5</MenuItem>
-                </MuiSelect>
-              </FormControl>
-            </div>
-            <div>
-              <button
-                type='button'
-                onClick={() => { setModal(false) }}
-              >キャンセル</button>
-              <button type='submit'>登録</button>
-            </div>
-          </form>
-        </div>
-      </div>
       {scheduleReceptions.map(renderSchedule)}
       <Fab
         sx={{
@@ -428,10 +303,18 @@ const Page: NextPage<PageProps> = ({
         }}
         color="secondary"
         aria-label="add"
-        onClick={() => setModal(true) }
+        onClick={() => setCreateDialog(true) }
       >
         <AddIcon />
       </Fab>
+      <ReceptionCreateDialog
+        dialog={createDialog}
+        setDialog={setCreateDialog}
+        saleTickets={saleTickets}
+        scheduleReceptions={scheduleReceptions}
+        supporters={supporters}
+        formSubmit={formSubmit}
+      />
     </div>
   );
 };
