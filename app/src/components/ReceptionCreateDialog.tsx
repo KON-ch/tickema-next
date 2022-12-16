@@ -144,6 +144,17 @@ const ReceptionCreateDialog: React.FC<Props> = ({ dialog, setDialog, saleTickets
                 rules={{required: true}}
                 render={({ field }) => (
                   <Select
+                    styles={{
+                      container: provided => ({
+                        ...provided,
+                        width: 300,
+                        marginBottom: 10
+                      }),
+                      menu: provided => ({
+                        ...provided,
+                        zIndex: 9999
+                      })
+                    }}
                     value={supporterOptions.find((supporter) => supporter.value === field.value)}
                     onChange={(ev) => { field.onChange(ev?.value) }}
                     options={supporterOptions}
