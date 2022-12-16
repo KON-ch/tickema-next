@@ -25,7 +25,7 @@ import MuiSelect from '@mui/material/Select';
 
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
-import { PerformanceSchedule, SaleTicket, Supporter } from '@prisma/client';
+import { PerformanceSchedule, ReservationReception, SaleTicket, Supporter } from '@prisma/client';
 
 type Props = {
   dialog: boolean
@@ -33,6 +33,8 @@ type Props = {
   scheduleReceptions: PerformanceSchedule[]
   saleTickets: SaleTicket[]
   supporters: Supporter[]
+  appearanceUserId: string
+  formSubmit: (reservation: ReservationReception) => void
 }
 
 const Transition = forwardRef(function Transition(
@@ -65,13 +67,39 @@ type CreateReceptionData = {
   }[]
 }
 
-const ReceptionCreateDialog: React.FC<Props> = ({ dialog, setDialog, saleTickets, scheduleReceptions, supporters, formSubmit
+const createReservation= async (data: CreateReceptionData, appearanceUserId: string) => {
+  if (!data.supporterId) { return; }
+
+  const endpoint = '/api/reservations';
+
+  const options = {
+    method: 'POST',
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      ...data,
+      receptionAt: new Date(data.receptionAt),
+      appearanceUserId: appearanceUserId
+    }),
+  };
+
+  try {
+    const res = await fetch(endpoint, options);
+    return res.json();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+const ReceptionCreateDialog: React.FC<Props> = ({
+  dialog, setDialog, saleTickets, scheduleReceptions, supporters, appearanceUserId, formSubmit
 }) => {
   const handleClose = () => {
     setDialog(false);
   };
 
-  const today = new Date()
+  const today = new Date();
   const year = today.getFullYear();
   const month = (today.getMonth() + 1) < 10 ? `0${today.getMonth()}` : today.getMonth() + 1;
   const date = today.getDate() < 10 ? `0${today.getDate()}` : today.getDate();
@@ -112,6 +140,15 @@ const ReceptionCreateDialog: React.FC<Props> = ({ dialog, setDialog, saleTickets
     return { value: supporter.id, label: supporter.name }
   })
 
+  const handleCreate = handleSubmit( async (data) => {
+    const reservation: ReservationReception | void = await createReservation(data, appearanceUserId)
+
+    reservation && formSubmit(reservation);
+
+    reset();
+    handleClose();
+  })
+
   return (
     <>
       <Dialog
@@ -135,7 +172,7 @@ const ReceptionCreateDialog: React.FC<Props> = ({ dialog, setDialog, saleTickets
             </Typography>
           </Toolbar>
         </AppBar>
-        <form onSubmit={handleSubmit(formSubmit)}>
+        <form onSubmit={handleCreate}>
           <List sx={{ p: 2 }}>
             <ListItem>
               <Controller

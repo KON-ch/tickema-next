@@ -142,67 +142,28 @@ const Page: NextPage<PageProps> = ({
     reception?: ReservationReception & { supporter: Supporter }
   }>({ open: false, reception: undefined })
 
-  type SubmitData = {
-    performanceScheduleId: string
-    supporterId?: number
-    receiveType: string
-    receptionAt: string
-    saleTicketId: string
-    count: string
-  }
-
-  const formSubmit = async (data: SubmitData) => {
-    if (!data.supporterId) {
-      setValidationSupporter('誰の予約かな?')
-      return;
-    }
-
-    const endpoint = '/api/reservations';
-
-    const options = {
-      method: 'POST',
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        ...data,
-        receptionAt: new Date(data.receptionAt),
-        appearanceUserId: appearanceUserId
-      }),
+  const formSubmit = (reservation: ReservationReception) => {
+    const addScheduleReceptions = (
+      schedule: PerformanceSchedule & { reservationReceptions: ReservationReception[] }
+    ) => {
+      if (schedule.id == reservation.performanceScheduleId) {
+        return {
+          ...schedule,
+          reservationReceptions: [
+            reservation,
+            ...schedule.reservationReceptions
+          ]
+        }
+      } else {
+        return schedule
+      }
     };
 
-    try {
-      const res = await fetch(endpoint, options);
-      const result: ReservationReception = await res.json();
+    setScheduleReceptions(
+      scheduleReceptions.map(addScheduleReceptions)
+    );
 
-      const addScheduleReceptions = (
-        schedule: PerformanceSchedule & { reservationReceptions: ReservationReception[] }
-      ) => {
-        if (schedule.id == result.performanceScheduleId) {
-          return {
-            ...schedule,
-            reservationReceptions: [
-              result,
-              ...schedule.reservationReceptions
-            ]
-          }
-        } else {
-          return schedule
-        }
-      };
-
-      setScheduleReceptions(
-        scheduleReceptions.map(addScheduleReceptions)
-      );
-
-      setOpenList(result.performanceScheduleId);
-    } catch(e) {
-      console.error(e)
-    }
-
-    setSubmitSupporter({ label: '', value: null })
-    setValidationSupporter('')
-    setCreateDialog(false);
+    setOpenList(reservation.performanceScheduleId);
   };
 
   const deleteTicket = async (cancelTicket: CancelReservationTicket) => {
@@ -313,6 +274,7 @@ const Page: NextPage<PageProps> = ({
         saleTickets={saleTickets}
         scheduleReceptions={scheduleReceptions}
         supporters={supporters}
+        appearanceUserId={appearanceUserId}
         formSubmit={formSubmit}
       />
     </div>
