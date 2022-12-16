@@ -13,7 +13,7 @@ import Slide from '@mui/material/Slide';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { TransitionProps } from '@mui/material/transitions';
 
-import type { Dispatch, SetStateAction, ReactElement, Ref } from 'react';
+import { Dispatch, SetStateAction, ReactElement, Ref, useEffect } from 'react';
 import { forwardRef } from 'react';
 
 import Select from 'react-select';
@@ -21,10 +21,9 @@ import Select from 'react-select';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
-import MuiSelect, { SelectChangeEvent } from '@mui/material/Select';
+import MuiSelect from '@mui/material/Select';
 
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
-import type { Control, UseFieldArrayRemove } from 'react-hook-form';
 
 import { PerformanceSchedule, SaleTicket, Supporter } from '@prisma/client';
 
@@ -77,7 +76,7 @@ const ReceptionCreateDialog: React.FC<Props> = ({ dialog, setDialog, saleTickets
   const month = (today.getMonth() + 1) < 10 ? `0${today.getMonth()}` : today.getMonth() + 1;
   const date = today.getDate() < 10 ? `0${today.getDate()}` : today.getDate();
 
-  const { control, handleSubmit, reset } = useForm<CreateReceptionData>({
+  const { control, handleSubmit, reset, setValue } = useForm<CreateReceptionData>({
     defaultValues: {
       receiveType: 1,
       receptionAt: `${year}-${month}-${date}`,
@@ -88,6 +87,11 @@ const ReceptionCreateDialog: React.FC<Props> = ({ dialog, setDialog, saleTickets
       ]
     }
   });
+
+  useEffect(() => {
+    setValue('performanceScheduleId', scheduleReceptions[0].id)
+    setValue('reservationTickets', [{ saleTicketId: saleTickets[0].id, count: 1 }])
+  }, [scheduleReceptions, saleTickets, setValue])
 
   const {
     fields: ticketFields,
