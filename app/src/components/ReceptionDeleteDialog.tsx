@@ -4,13 +4,13 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
-import { CancelReservationTicket, ReservationReception, Supporter } from '@prisma/client';
+import { CancelReservationTicket, ReservationReception, ReservationTicket, Supporter } from '@prisma/client';
 
 import type { Dispatch, SetStateAction } from 'react';
 
 type Dialog = {
   open: boolean
-  reception?: ReservationReception & { supporter: Supporter }
+  reception?: ReservationReception & { supporter: Supporter, reservationTickets: ReservationTicket[] }
 }
 
 type Props = {
@@ -19,14 +19,14 @@ type Props = {
   deleteTicket: (cancelTicket: CancelReservationTicket) => Promise<void>
 }
 
-const ticketCancel = async (id: number) => {
+const ticketCancel = async (ticket: ReservationTicket) => {
   try {
-    const res = await fetch(`/api/reservations/tickets/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/reservations/tickets/${ticket.id}`, { method: 'DELETE' });
     return res.json();
   } catch(e) {
     console.error(e);
   }
-}
+};
 
 const ReceptionDeleteDialog: React.FC<Props> = ({ dialog, setDialog, deleteTicket }) => {
   const handleClose = () => {
@@ -39,9 +39,12 @@ const ReceptionDeleteDialog: React.FC<Props> = ({ dialog, setDialog, deleteTicke
       return;
     }
 
-    const cancelTicket: CancelReservationTicket | void = await ticketCancel(dialog.reception.id)
+    dialog.reception.reservationTickets.forEach(async ticket => {
+      const cancelTicket: CancelReservationTicket | void = await ticketCancel(ticket)
+      cancelTicket && deleteTicket(cancelTicket)
+    })
 
-    cancelTicket && deleteTicket(cancelTicket)
+    handleClose();
   }
 
   return (
