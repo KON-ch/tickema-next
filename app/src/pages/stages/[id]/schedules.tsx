@@ -168,7 +168,7 @@ const Page: NextPage<PageProps> = ({
     setExpandedSchedule(reservation.performanceScheduleId);
   };
 
-  const deleteTicket = async (cancelTicket: CancelReservationTicket) => {
+  const deleteTicket = (cancelTicket: CancelReservationTicket) => {
     const verifiedTickets = (reception: ReservationReception & { reservationTickets: ReservationTicket[] }) => {
       return {
         ...reception,
@@ -185,8 +185,7 @@ const Page: NextPage<PageProps> = ({
       };
     };
 
-    setScheduleReceptions(scheduleReceptions.map(verifiedSchedule));
-    setDeleteDialog({ open: false, reception: undefined })
+    setScheduleReceptions((schedules) => schedules.map(verifiedSchedule));
   }
 
   const deleteReception = (

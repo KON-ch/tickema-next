@@ -16,7 +16,7 @@ type Dialog = {
 type Props = {
   dialog: Dialog
   setDialog: Dispatch<SetStateAction<Dialog>>
-  deleteTicket: (cancelTicket: CancelReservationTicket) => Promise<void>
+  deleteTicket: (cancelTicket: CancelReservationTicket) => void
 }
 
 const ticketCancel = async (ticket: ReservationTicket) => {
@@ -40,8 +40,8 @@ const ReceptionDeleteDialog: React.FC<Props> = ({ dialog, setDialog, deleteTicke
     }
 
     dialog.reception.reservationTickets.forEach(async ticket => {
-      const cancelTicket: CancelReservationTicket | void = await ticketCancel(ticket)
-      cancelTicket && deleteTicket(cancelTicket)
+      const cancelTicket: CancelReservationTicket | void = await ticketCancel(ticket);
+      cancelTicket && deleteTicket(cancelTicket);
     })
 
     handleClose();
