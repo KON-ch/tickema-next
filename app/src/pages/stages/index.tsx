@@ -12,6 +12,8 @@ import StageForm from '../../components/StageForm';
 import type { CreateStageData } from '../../types/FormData';
 import { AppearanceStage } from '@prisma/client';
 
+import { Container } from '@mui/system';
+
 export const getServerSideProps: GetServerSideProps = async ctx => {
   const session = await getSession(ctx)
 
@@ -98,13 +100,13 @@ const Page: NextPage<StageProps> = ({ stages, appearanceUserId }) => {
   }
 
   return (
-    <>
-      <LoginButton />
+    <Container sx={{ p: 1 }}>
+      <h1>公演情報</h1>
       <StageForm onSubmit={formSubmit} />
       <ol>
         {appearanceStages.map(stageLink)}
       </ol>
-    </>
+    </Container>
   );
 };
 
