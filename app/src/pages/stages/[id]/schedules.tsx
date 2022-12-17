@@ -17,6 +17,7 @@ import DrawerMenu from '../../../components/DrawerMenu';
 
 import { AppearanceStage, CancelReservationTicket, PerformanceSchedule, ReservationReception, ReservationTicket, SaleTicket, Supporter } from '@prisma/client';
 import { AppBar, Toolbar, Typography } from '@mui/material';
+import ScheduleAccordion from '../../../components/ScheduleAccordion';
 
 interface Params extends ParsedUrlQuery {
   id: string
@@ -134,8 +135,8 @@ const Page: NextPage<PageProps> = ({
   const [scheduleReceptions, setScheduleReceptions] = useState(schedules);
   useEffect(() => { setScheduleReceptions(schedules) }, [schedules])
 
-  const [openList, setOpenList] = useState(-1);
-  useEffect(() => { setOpenList(-1) }, [schedules])
+  const [expandedSchedule, setExpandedSchedule] = useState<number | false>(false);
+  useEffect(() => { setExpandedSchedule(false) }, [schedules])
 
   const [createDialog, setCreateDialog] = useState(false)
   const [deleteDialog, setDeleteDialog] = useState<{
@@ -164,7 +165,7 @@ const Page: NextPage<PageProps> = ({
       scheduleReceptions.map(addScheduleReceptions)
     );
 
-    setOpenList(reservation.performanceScheduleId);
+    setExpandedSchedule(reservation.performanceScheduleId);
   };
 
   const deleteTicket = async (cancelTicket: CancelReservationTicket) => {
@@ -188,64 +189,13 @@ const Page: NextPage<PageProps> = ({
     setDeleteDialog({ open: false, reception: undefined })
   }
 
-  function renderReception(
-    reception: ReservationReception & { reservationTickets: ReservationTicket[], supporter: Supporter }
-  ): JSX.Element | undefined {
-    const ticketCounter = (sum: number, ticket: ReservationTicket) => {
-      return sum + ticket.count;
+  const deleteReception = (
+    reception: ReservationReception & {
+      supporter: Supporter;
+      reservationTickets: ReservationTicket[];
     }
-
-    const totalCount: number = reception.reservationTickets.reduce(ticketCounter, 0);
-
-    if (totalCount === 0) { return }
-
-    return (
-      <div className={styles.info} key={reception.id}>
-        {reception.supporter.name}
-        <span>{totalCount}枚</span>
-        <button
-          onClick={() => setDeleteDialog({ open: true, reception: reception})}
-        >
-          ✖
-        </button>
-      </div>
-    );
-  }
-
-  const locateSchedule = (schedule: PerformanceSchedule) => {
-    const date: Date = new Date(schedule.startedAt);
-    const month: String = (date.getUTCMonth() + 1).toString();
-    const dt: String = date.getUTCDate().toString();
-    const hour: String = date.getUTCHours().toString();
-    const minutes: String = date.getUTCMinutes() > 9 ? date.getUTCMinutes().toString() : '0' + date.getUTCMinutes();
-
-    return `${month}月${dt}日 ${hour}:${minutes}`;
-  }
-
-  function renderSchedule(schedule: PerformanceSchedule & { reservationReceptions: ReservationReception[] }): JSX.Element {
-    const startedAt = locateSchedule(schedule)
-
-    const scheduleId: number = schedule.id
-    const displayStyle = scheduleId == openList ? styles.open : styles.close
-
-    const toggleList = (scheduleId: number) => {
-      if (scheduleId == openList) {
-        setOpenList(-1)
-        return;
-      }
-      setOpenList(scheduleId)
-    }
-
-    return (
-      <div className={styles.list} key={schedule.id}>
-        <div className={styles.date} onClick={() => toggleList(scheduleId)}>{startedAt}
-          <button>▽</button>
-        </div>
-        <div className={displayStyle}>
-          {schedule.reservationReceptions.map(renderReception)}
-        </div>
-      </div>
-    );
+  ) => {
+    setDeleteDialog({ open: true, reception: reception})
   }
 
   return (
@@ -263,7 +213,12 @@ const Page: NextPage<PageProps> = ({
         setDialog={setDeleteDialog}
         deleteTicket={deleteTicket}
       />
-      {scheduleReceptions.map(renderSchedule)}
+      <ScheduleAccordion
+        expanded={expandedSchedule}
+        setExpanded={setExpandedSchedule}
+        schedules={scheduleReceptions}
+        deleteReception={deleteReception}
+      />
       <Fab
         sx={{
           position: 'fixed',
