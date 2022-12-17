@@ -16,6 +16,7 @@ import ReceptionCreateDialog from '../../../components/ReceptionCreateDialog';
 import DrawerMenu from '../../../components/DrawerMenu';
 
 import { AppearanceStage, CancelReservationTicket, PerformanceSchedule, ReservationReception, ReservationTicket, SaleTicket, Supporter } from '@prisma/client';
+import { AppBar, Toolbar, Typography } from '@mui/material';
 
 interface Params extends ParsedUrlQuery {
   id: string
@@ -139,7 +140,7 @@ const Page: NextPage<PageProps> = ({
   const [createDialog, setCreateDialog] = useState(false)
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean,
-    reception?: ReservationReception & { supporter: Supporter }
+    reception?: ReservationReception & { supporter: Supporter, reservationTickets: ReservationTicket[] }
   }>({ open: false, reception: undefined })
 
   const formSubmit = (reservation: ReservationReception) => {
@@ -249,7 +250,14 @@ const Page: NextPage<PageProps> = ({
 
   return (
     <div className={styles.schedules}>
-      <DrawerMenu currentStageId={stage.id} />
+      <AppBar sx={{ position: 'relative' }}>
+        <Toolbar>
+          <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
+            {stage.title}
+          </Typography>
+          <DrawerMenu currentStageId={stage.id} />
+        </Toolbar>
+      </AppBar>
       <ReceptionDeleteDialog
         dialog={deleteDialog}
         setDialog={setDeleteDialog}

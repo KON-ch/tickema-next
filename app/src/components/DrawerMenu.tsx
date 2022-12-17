@@ -48,8 +48,8 @@ const DrawerMenu: React.FC<Props> = ({ currentStageId }) => {
     if (stage.id === currentStageId) { return; }
 
     return(
-      <StageScheduleLink stage={stage}>
-        <ListItem key={stage.id} disablePadding>
+      <StageScheduleLink key={stage.id} stage={stage}>
+        <ListItem disablePadding>
           <ListItemButton>
             <ListItemIcon>
               <InboxIcon />
@@ -89,7 +89,7 @@ const DrawerMenu: React.FC<Props> = ({ currentStageId }) => {
   return (
     <div>
       <Fragment key={'right'}>
-        <Button onClick={() => toggleDrawer(true)}>
+        <Button onClick={() => toggleDrawer(true)} color='secondary' variant='contained' >
           ≡
         </Button>
         <Drawer
