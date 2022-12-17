@@ -1,5 +1,4 @@
 import type { NextPage, GetServerSideProps } from 'next';
-import LoginButton from '../../components/LoginButton';
 
 import prisma from '../../../lib/prisma';
 import { getSession } from 'next-auth/react';
@@ -12,7 +11,9 @@ import StageForm from '../../components/StageForm';
 import type { CreateStageData } from '../../types/FormData';
 import { AppearanceStage } from '@prisma/client';
 
-import { Container } from '@mui/system';
+import { Container} from '@mui/system';
+import { List, ListItem, ListItemIcon, ListItemText } from '@mui/material';
+import LaunchIcon from '@mui/icons-material/Launch';
 
 export const getServerSideProps: GetServerSideProps = async ctx => {
   const session = await getSession(ctx)
@@ -91,21 +92,24 @@ const Page: NextPage<StageProps> = ({ stages, appearanceUserId }) => {
 
   const stageLink = (stage: AppearanceStage) => {
     return (
-      <li key={stage.id}>
-        <StageScheduleLink stage={stage}>
-          {stage.title}
-        </StageScheduleLink>
-      </li>
+      <StageScheduleLink stage={stage} key={stage.id}>
+        <ListItem>
+          <ListItemIcon>
+            <LaunchIcon />
+          </ListItemIcon>
+          <ListItemText primary={stage.title} />
+        </ListItem>
+      </StageScheduleLink>
     )
   }
 
   return (
-    <Container sx={{ p: 1 }}>
+    <Container sx={{ p: 2 }}>
       <h1>公演情報</h1>
       <StageForm onSubmit={formSubmit} />
-      <ol>
+      <List>
         {appearanceStages.map(stageLink)}
-      </ol>
+      </List>
     </Container>
   );
 };
