@@ -1,8 +1,10 @@
-import Accordion from '@mui/material/Accordion';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import Typography from '@mui/material/Typography';
+import {
+  Accordion, AccordionDetails, AccordionSummary, Typography, IconButton, Grid
+} from '@mui/material';
+
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import DeleteIcon from '@mui/icons-material/Delete';
+import LabelIcon from '@mui/icons-material/Label';
 
 import { locateSchedule } from '../utils/locate';
 import { CancelReservationTicket, PerformanceSchedule, ReservationReception, ReservationTicket, Supporter } from '@prisma/client';
@@ -52,16 +54,21 @@ const ScheduleAccordion: React.FC<Props> = ({
           const startedAt = locateSchedule(schedule)
 
           return (
-            <Accordion key={schedule.id} expanded={expanded === schedule.id} onChange={handleChange(schedule.id)}>
+            <Accordion
+              key={schedule.id}
+              expanded={expanded === schedule.id}
+              onChange={handleChange(schedule.id)}
+              TransitionProps={{ unmountOnExit: true }}
+            >
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
                 aria-controls={`schedule-${schedule.id}-header`}
                 id={`schedule-${schedule.id}-header`}
               >
-                <Typography sx={{ width: '33%', flexShrink: 0 }}>
+                <Typography sx={{ width: '40%', flexShrink: 0 }}>
                   { startedAt }
                 </Typography>
-                <Typography sx={{ color: 'text.secondary', ml: 2 }}>
+                <Typography sx={{ color: 'text.secondary' }}>
                   予約 {
                     schedule.reservationReceptions.flatMap(reception => {
                       return (
@@ -81,15 +88,30 @@ const ScheduleAccordion: React.FC<Props> = ({
                     if (totalCount === 0) { return }
 
                     return (
-                      <Typography key={reception.id}>
-                        { reception.supporter.name }
-                        <span>{ totalCount }枚</span>
-                        <button
-                          onClick={ () => deleteReception(reception)}
-                        >
-                          ✖
-                      </button>
-                      </Typography>
+                      <Grid
+                        container
+                        spacing={3}
+                        key={reception.id}
+                        sx={{ borderBottom: 1 }}
+                      >
+                        <Grid item xs={1} sx={{ my: 'auto' }}>
+                          <LabelIcon />
+                        </Grid>
+                        <Grid item xs={6} sx={{ my: 'auto' }}>
+                          { reception.supporter.name }
+                        </Grid>
+                        <Grid item xs={2} sx={{ my: 'auto' }}>
+                          { totalCount }枚
+                        </Grid>
+                        <Grid item xs={2} sx={{ my: 'auto' }}>
+                          <IconButton
+                            color='error'
+                            onClick={ () => deleteReception(reception)}
+                          >
+                            <DeleteIcon sx={{ my: 'auto' }} />
+                          </IconButton>
+                        </Grid>
+                      </Grid>
                     )
                   })
                 }
