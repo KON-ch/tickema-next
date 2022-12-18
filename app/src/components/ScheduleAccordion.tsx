@@ -70,13 +70,12 @@ const ScheduleAccordion: React.FC<Props> = ({
                 </Typography>
                 <Typography sx={{ color: 'text.secondary' }}>
                   予約 {
-                    schedule.reservationReceptions.flatMap(reception => {
-                      return (
-                        reception.reservationTickets.filter(ticket =>
-                          !ticket.cancelReservationTicket
-                        )
+                    schedule.reservationReceptions.filter(reception =>
+                      // キャンセルされていないチケットがある予約
+                      reception.reservationTickets.find(ticket =>
+                        !ticket.cancelReservationTicket
                       )
-                    }).length
+                    ).length
                   } 件
                 </Typography>
               </AccordionSummary>
