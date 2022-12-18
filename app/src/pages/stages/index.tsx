@@ -92,14 +92,14 @@ const Page: NextPage<StageProps> = ({ stages, appearanceUserId }) => {
 
   const stageLink = (stage: AppearanceStage) => {
     return (
-      <StageScheduleLink stage={stage} key={stage.id}>
-        <ListItem>
+      <ListItem>
+        <StageScheduleLink stage={stage} key={stage.id}>
           <ListItemIcon>
             <LaunchIcon />
           </ListItemIcon>
-          <ListItemText primary={stage.title} />
-        </ListItem>
-      </StageScheduleLink>
+        </StageScheduleLink>
+        <ListItemText primary={stage.title} />
+      </ListItem>
     )
   }
 
