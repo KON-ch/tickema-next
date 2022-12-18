@@ -64,12 +64,13 @@ model Supporter {
 }
 
 model AppearanceStage {
-  id                   Int                   @id @default(autoincrement())
-  title                String                @db.VarChar(255)
-  appearanceUserId     String
-  appearanceUser       AppearanceUser        @relation(fields: [appearanceUserId], references: [id])
-  performanceSchedules PerformanceSchedule[]
-  saleTickets          SaleTicket[]
+  id                    Int                    @id @default(autoincrement())
+  title                 String                 @db.VarChar(255)
+  appearanceUserId      String
+  appearanceUser        AppearanceUser         @relation(fields: [appearanceUserId], references: [id])
+  performanceSchedules  PerformanceSchedule[]
+  saleTickets           SaleTicket[]
+  deleteAppearanceStage DeleteAppearanceStage?
 }
 
 model PerformanceSchedule {
@@ -115,4 +116,12 @@ model CancelReservationTicket {
   canceledAt          DateTime
   reservationTicketId Int               @unique
   reservationTicket   ReservationTicket @relation(fields: [reservationTicketId], references: [id])
+}
+
+model DeleteAppearanceStage {
+  id                Int             @id @default(autoincrement())
+  deletedAt         DateTime
+  appearanceStageId Int             @unique
+  appearanceStage   AppearanceStage @relation(fields: [appearanceStageId], references: [id])
+
 }
