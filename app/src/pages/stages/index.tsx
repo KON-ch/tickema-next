@@ -9,11 +9,12 @@ import StageScheduleLink from '../../components/StageSchedulesLink';
 import StageForm from '../../components/StageForm';
 
 import type { CreateStageData } from '../../types/FormData';
-import { AppearanceStage } from '@prisma/client';
+import { AppearanceStage, DeleteAppearanceStage } from '@prisma/client';
 
 import { Container} from '@mui/system';
 import { List, ListItem, ListItemIcon, ListItemText } from '@mui/material';
 import LaunchIcon from '@mui/icons-material/Launch';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 export const getServerSideProps: GetServerSideProps = async ctx => {
   const session = await getSession(ctx)
@@ -41,7 +42,10 @@ export const getServerSideProps: GetServerSideProps = async ctx => {
   }
 
   const stages = await prisma.appearanceStage.findMany({
-    where: { appearanceUserId: user.id },
+    where: {
+      appearanceUserId: user.id,
+      deleteAppearanceStage: null,
+    },
     select: {
       id: true,
       title: true
@@ -82,7 +86,7 @@ const Page: NextPage<StageProps> = ({ stages, appearanceUserId }) => {
       const res = await fetch(endpoint, options);
       const result: AppearanceStage = await res.json();
 
-      setAppearanceStages([result, ...appearanceStages]);
+      setAppearanceStages(stages => [result, ...stages]);
     } catch(e) {
       console.error(e);
     }
@@ -90,15 +94,34 @@ const Page: NextPage<StageProps> = ({ stages, appearanceUserId }) => {
 
   const [appearanceStages, setAppearanceStages] = useState(stages);
 
+  const handleDeleteStage = async (stageId: number) => {
+    try {
+      const res = await fetch(`/api/stages/${stageId}`, { method: 'DELETE' });
+      const deleteStage: DeleteAppearanceStage = await res.json();
+
+      setAppearanceStages(stages => {
+        return stages.filter(stage => stage.id !== deleteStage.appearanceStageId)
+      });
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
   const stageLink = (stage: AppearanceStage) => {
     return (
-      <ListItem>
-        <StageScheduleLink stage={stage} key={stage.id}>
+      <ListItem key={stage.id}>
+        <StageScheduleLink stage={stage}>
           <ListItemIcon>
             <LaunchIcon />
           </ListItemIcon>
         </StageScheduleLink>
         <ListItemText primary={stage.title} />
+        <ListItemIcon>
+          <DeleteIcon
+            color='error'
+            onClick={() => handleDeleteStage(stage.id)}
+          />
+        </ListItemIcon>
       </ListItem>
     )
   }
