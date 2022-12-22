@@ -2,8 +2,6 @@ import type { NextPage, GetServerSideProps } from 'next';
 
 import { ParsedUrlQuery } from 'querystring';
 
-import styles from '../../../styles/Schedules.module.css'
-
 import prisma from '../../../../lib/prisma'
 import { useEffect, useState } from 'react';
 import { getSession } from 'next-auth/react'
@@ -34,8 +32,20 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ctx => {
   const stage = await prisma.appearanceStage.findUnique({
     where: {
       id: Number(id),
+    },
+    include: {
+      deleteAppearanceStage: true
     }
   })
+
+  if (stage?.deleteAppearanceStage) {
+    return {
+      redirect: {
+        permanent: true,
+        destination: '/'
+      }
+    }
+  }
 
   const appearanceUser = await prisma.appearanceUser.findUnique({
     where: {
@@ -198,7 +208,7 @@ const Page: NextPage<PageProps> = ({
   }
 
   return (
-    <div className={styles.schedules}>
+    <div>
       <AppBar sx={{ position: 'relative' }}>
         <Toolbar>
           <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">

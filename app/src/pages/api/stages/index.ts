@@ -42,7 +42,8 @@ async function getStages(
   try {
     const appearanceStages: AppearanceStage[] = await prisma.appearanceStage.findMany({
       where: {
-        appearanceUserId: appearanceUser.id
+        appearanceUserId: appearanceUser.id,
+        deleteAppearanceStage: null,
       },
       select: {
         id: true,
