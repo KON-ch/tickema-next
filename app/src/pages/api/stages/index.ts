@@ -1,8 +1,8 @@
 import { unstable_getServerSession } from 'next-auth/next';
-import { authOptions } from './auth/[...nextauth]';
+import { authOptions } from '../auth/[...nextauth]';
 
 import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next'
-import prisma from '../../../lib/prisma'
+import prisma from '../../../../lib/prisma'
 
 type AppearanceStage = {
   id: number
@@ -32,8 +32,15 @@ async function getStages(
     }
   })
 
+  if (!appearanceUser) {
+    res.status(400).json({
+      message: 'You must be signed in to view the protected content on this page.',
+    });
+    return;
+  }
+
   try {
-    const AppearanceStages: AppearanceStage[] = await prisma.AppearanceStage.findMany({
+    const appearanceStages: AppearanceStage[] = await prisma.appearanceStage.findMany({
       where: {
         appearanceUserId: appearanceUser.id
       },
@@ -42,7 +49,7 @@ async function getStages(
         title: true
       }
     })
-    res.status(200).json(AppearanceStages);
+    res.status(200).json(appearanceStages);
   } catch(error) {
     res.status(400).json(error);
   }
@@ -68,6 +75,13 @@ async function postStages(
     }
   })
 
+  if (!appearanceUser) {
+    res.status(400).json({
+      message: 'You must be signed in to view the protected content on this page.',
+    });
+    return;
+  }
+
   if (data.appearanceUserId !== appearanceUser.id) {
     res.status(400).json({
       message: 'error user different',
@@ -89,7 +103,7 @@ async function postStages(
   }
 
   try {
-    const appearanceStage = await prisma.AppearanceStage.create({
+    const appearanceStage = await prisma.appearanceStage.create({
       data: postData,
     })
     res.status(201).json(appearanceStage);
