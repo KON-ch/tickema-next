@@ -15,6 +15,7 @@ import { Container} from '@mui/system';
 import { List, ListItem, ListItemIcon, ListItemText } from '@mui/material';
 import LaunchIcon from '@mui/icons-material/Launch';
 import DeleteIcon from '@mui/icons-material/Delete';
+import StageDeleteDialog from '../../components/StageDeleteDialog';
 
 export const getServerSideProps: GetServerSideProps = async ctx => {
   const session = await getSession(ctx)
@@ -93,18 +94,15 @@ const Page: NextPage<StageProps> = ({ stages, appearanceUserId }) => {
   };
 
   const [appearanceStages, setAppearanceStages] = useState(stages);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean,
+    stage?: AppearanceStage
+  }>({ open: false, stage: undefined })
 
-  const handleDeleteStage = async (stageId: number) => {
-    try {
-      const res = await fetch(`/api/stages/${stageId}`, { method: 'DELETE' });
-      const deleteStage: DeleteAppearanceStage = await res.json();
-
-      setAppearanceStages(stages => {
-        return stages.filter(stage => stage.id !== deleteStage.appearanceStageId)
-      });
-    } catch(e) {
-      console.error(e);
-    }
+  const handleDeleteStage = async (deleteStage: DeleteAppearanceStage) => {
+    setAppearanceStages(stages => {
+      return stages.filter(stage => stage.id !== deleteStage.appearanceStageId)
+    });
   }
 
   const stageLink = (stage: AppearanceStage) => {
@@ -119,7 +117,7 @@ const Page: NextPage<StageProps> = ({ stages, appearanceUserId }) => {
         <ListItemIcon>
           <DeleteIcon
             color='error'
-            onClick={() => handleDeleteStage(stage.id)}
+            onClick={() => setDeleteDialog({ open: true, stage: stage }) }
           />
         </ListItemIcon>
       </ListItem>
@@ -133,6 +131,11 @@ const Page: NextPage<StageProps> = ({ stages, appearanceUserId }) => {
       <List>
         {appearanceStages.map(stageLink)}
       </List>
+      <StageDeleteDialog
+        dialog={deleteDialog}
+        setDialog={setDeleteDialog}
+        deleteStage={handleDeleteStage}
+      />
     </Container>
   );
 };
