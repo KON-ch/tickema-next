@@ -13,10 +13,10 @@ import Slide from '@mui/material/Slide';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { TransitionProps } from '@mui/material/transitions';
 
-import { Dispatch, SetStateAction, ReactElement, Ref, useEffect } from 'react';
+import { Dispatch, SetStateAction, ReactElement, Ref, useEffect, useState } from 'react';
 import { forwardRef } from 'react';
 
-import Select from 'react-select';
+import CreatableSelect from 'react-select/creatable';
 
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
@@ -128,11 +128,13 @@ const ReceptionCreateDialog: React.FC<Props> = ({
     label: string
   }
 
-  const supporterOptions: SupporterOption[] = supporters.map(supporter => {
-    return { value: supporter.id, label: supporter.name }
-  })
+  const [supporterOptions, setSupporterOptions] = useState<SupporterOption[]>(
+    supporters.map(supporter => {
+      return { value: supporter.id, label: supporter.name }
+    })
+  )
 
-  const handleCreate = handleSubmit( async (data) => {
+  const handleCreateReception = handleSubmit( async (data) => {
     const reservation: ReservationReception | void = await createReservation(data, appearanceUserId)
 
     reservation && formSubmit(reservation);
@@ -140,6 +142,21 @@ const ReceptionCreateDialog: React.FC<Props> = ({
     reset();
     handleClose();
   })
+
+  const handleCreateSupporter = async (inputValue: string) => {
+    const options = {
+      method: 'POST',
+      headers: {
+      "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name: inputValue, appearanceUserId: appearanceUserId })
+    }
+
+    const res = await fetch('/api/supporters', options);
+    const supporter = await res.json();
+
+    setSupporterOptions(options => [...options, { value: supporter.id, label: supporter.name }])
+  }
 
   return (
     <>
@@ -164,7 +181,7 @@ const ReceptionCreateDialog: React.FC<Props> = ({
             </Typography>
           </Toolbar>
         </AppBar>
-        <form onSubmit={handleCreate}>
+        <form onSubmit={handleCreateReception}>
           <List sx={{ p: 2 }}>
             <ListItem>
               <Controller
@@ -172,7 +189,9 @@ const ReceptionCreateDialog: React.FC<Props> = ({
                 control={control}
                 rules={{required: true}}
                 render={({ field }) => (
-                  <Select
+                  <CreatableSelect
+                    isClearable
+                    onCreateOption={handleCreateSupporter}
                     styles={{
                       container: provided => ({
                         ...provided,
