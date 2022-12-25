@@ -28,6 +28,13 @@ async function createCancelTicket(
     }
   })
 
+  if (!appearanceUser) {
+    res.status(400).json({
+      message: 'You must be signed in to view the protected content on this page.',
+    });
+    return;
+  }
+
   const { id } = req.query
 
   const reservationTicket = await prisma.reservationTicket.findUnique({
@@ -43,7 +50,7 @@ async function createCancelTicket(
     }
   })
 
-  if (reservationTicket.saleTicket.appearanceStage.appearanceUserId !== appearanceUser.id) {
+  if (!reservationTicket || reservationTicket.saleTicket.appearanceStage.appearanceUserId !== appearanceUser.id) {
     res.status(400).json({
       message: 'error user different',
     });
@@ -58,6 +65,9 @@ async function createCancelTicket(
       data: {
         canceledAt: date.toISOString(),
         reservationTicketId: reservationTicket.id
+      },
+      include: {
+        reservationTicket: true
       }
     })
     res.status(200).json(cancelTicket);
