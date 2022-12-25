@@ -9,7 +9,9 @@ import type { CreateSupporterData } from '../../types/FormData';
 import { Supporter } from '@prisma/client';
 
 import { Container} from '@mui/system';
-import { List, ListItem, ListItemText } from '@mui/material';
+import { AppBar, List, ListItem, ListItemText, Toolbar, Typography } from '@mui/material';
+
+import DrawerMenu from '../../components/DrawerMenu';
 
 export const getServerSideProps: GetServerSideProps = async ctx => {
   const session = await getSession(ctx)
@@ -91,12 +93,21 @@ const Page: NextPage<SupporterProps> = (props) => {
   }
 
   return (
-    <Container sx={{ p: 2 }}>
-      <h1>応援者情報</h1>
-      <List>
-        {supporters.map(supporterListItem)}
-      </List>
-    </Container>
+    <>
+      <AppBar sx={{ position: 'relative' }}>
+        <Toolbar>
+          <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
+            応援者情報
+          </Typography>
+          <DrawerMenu />
+        </Toolbar>
+      </AppBar>
+      <Container sx={{ p: 2 }}>
+        <List>
+          {supporters.map(supporterListItem)}
+        </List>
+      </Container>
+    </>
   );
 };
 
